@@ -1,0 +1,1489 @@
+//=============================================== =============================
+// NRP_BushEX.js
+//=============================================== =============================
+/*:
+ * @target MV MZ
+ * @plugindesc v1.05 ブッシュ属性の機能を拡張します。
+ * @作者 砂川武 (http://newrpg.seesaa.net/)
+ * @orderBefore OverpassTile
+ * @url http://newrpg.seesaa.net/article/481013577.html
+ *
+ * @help ブッシュ属性の機能を拡張します。
+ *
+ ※通常、茂み属性が付加されたタイルの上に立つと、
+ ※キャラクターの下半身が半透明になります。
+ ※この機能は藪だけでなく水回りにも使用されます。
+ *
+ ※ただし、問題は茂み属性が全レイヤーに適用されてしまうことです。
+ * たとえば、水の上に橋がかかっているとします。
+ *あなたのキャラクターはその上に立っています。
+ ※キャラクターが半透明になり、
+ *あたかも橋の上に立っているが、彼は水中にいるかのようです。
+ *
+ * したがって、茂みの上のレイヤーに他のタイルがある場合、
+ ※ブッシュ属性は適用しません。
+ *
+ ※さらに、不透明度や茂みの深さを調整したり、
+ * そして、追加の追加として、色。
+ ※TerrainTagsを使用して設定を微調整することもできます。
+ *条件としてのRegionID、TileID、およびAutoTileTypes。
+ *
+ ※作成した設定に「SettingId」を追加すると、
+ ※タイルセットごとの設定を呼び出すことができます。
+ *
+ * -------------------------------------------------- ------------------
+ * [使用法]
+ * -------------------------------------------------- ------------------
+ ※プラグインを適用すると、
+ ※「LimitBushLayer」機能は初期状態ではオンになっています。
+ ※ブッシュの深さと不透明度はパラメータで設定可能です。
+ *
+ ※さらに、SettingListよりも細かい調整が可能です。
+ ※全てのタイルセットに対して設定が有効かどうか
+ * またはタイルセットごとに呼び出すかどうかは、リスト内のパラメーターによって切り替えることができます。
+ *
+ * -------------------------------------------------- ------------------
+ ※【タイルセットについての注意事項】
+ * -------------------------------------------------- ------------------
+ ※各タイルセットの設定を呼び出すには、
+ ※注記に以下を明記してください。
+ *
+ * <ブッシュ設定:?>
+ *
+ * ? 条件別設定に登録されている「SettingId」です。
+ ※カンマ区切りで複数指定することもできます。
+ *
+ * <ブッシュ設定:A、B、C>
+ *
+ * -------------------------------------------------- ------------------
+ ※【イベント注意事項】
+ * -------------------------------------------------- ------------------
+ * <セットブッシュ:?>
+ * 現在の地形に関係なく、ターゲットに茂みの効果を強制します。
+ * ? 条件別設定に登録されている「SettingId」です。
+ *
+ ※イベントページ上部の備考欄にもタグをご記入ください。
+ ※現在のページごとにステータスを切り替えることができます。
+ *
+ * <ノーブッシュ>
+ * イベントはブッシュ属性の影響を受けなくなりました。
+ *
+ * -------------------------------------------------- ------------------
+ * [プラグインコマンドMZ]
+ * -------------------------------------------------- ------------------
+ * ◆SetBushEffect
+ * 現在の地形に関係なく、ターゲットに茂みの効果を強制します。
+ ※TargetsIdには対象のイベントIDを指定します。
+ ※また、-1はプレイヤー、-2以下はフォロワーが対象となります。
+ *
+ ※TargetsId以外のパラメータを空白にした場合、
+ ※キャンセルとなります。
+
+ * ◆SetBushEffectVehicle
+ * 現在の地形に関係なく、車両にブッシュ効果を強制的に適用します。
+ ※VehicleType以外のパラメータが空白の場合、
+ ※キャンセルとなります。
+
+ * -------------------------------------------------- ------------------
+ ※イベントの受注はプレイヤーが移籍すると自動的に解除されます。
+ *
+ ※一方、プレイヤー、フォロワー、
+ ※転送やセーブ＆ロードでは車両は解放されません。
+ ※不要になったら必ず解除してください。
+ *
+ * -------------------------------------------------- ------------------
+ * [知らせ]
+ * -------------------------------------------------- ------------------
+ ※このプラグインとOverpassTile.jsを併用する場合、
+ ※このプラグインは必ず最上位に配置してください。
+ *
+ * -------------------------------------------------- ------------------
+ * [条項]
+ * -------------------------------------------------- ------------------
+ ※特に制限はございません。
+ ※改変、再配布の自由、商用可、
+ *および権利表示もオプションです。
+ ※作者は責任を負いませんので、
+ ※ただし、不具合等には可能な限り対応させていただきます。
+ *
+ * @------------------------------------------------ ------------------
+ * @ プラグインコマンド
+ * @------------------------------------------------ ------------------
+ *
+ * @コマンド SetBushEffect
+ * @desc 地形に関係なくターゲットに茂みの効果を強制します。
+ ※TargetsId以外のパラメータは空白のままでキャンセルしてください。
+ *
+ * @arg ターゲット ID
+ * @desc ターゲットイベントID。
+ ※対象プレイヤーをフォロワーにするには-1以下。
+ * @type コンボ
+ * @オプション 1,2,3 #複数
+ * @option 1~3 #Range
+ * @option $gameVariables.value(1) #可変数イベント
+ * @option -1 #Player
+ * @option -1~-4 #パーティー
+ *
+ * @arg ブッシュ深度
+ * @タイプ番号
+ * @desc 下半身にブッシュ効果を適用する高さ。
+ * 0 は常にブッシュ効果を無効にします。
+ *
+ * @arg BushOpacity
+ * @タイプ番号
+ * @最大255
+ * @desc 下半身に適用される不透明度。
+ * 255 では完全に不透明になります。
+ *
+ * @arg ブッシュカラー
+ * @type文字列
+ * @desc この色は下半身に適用されます。
+ * 例: [255,255,255,255] (赤、緑、青、強さ)
+ *
+ * @arg FloatAmplitude
+ * @type text
+ * @desc フローティングエフェクトの振幅。
+ ※公式もございます。
+ *
+ * @arg FloatPeriodicTime
+ * @type text
+ * @desc フローティングエフェクトの振幅の周期。デフォルトは 120。
+ *
+ * @------------------------------------------------ ------------------
+ *
+ * @コマンド SetBushEffectVehicle
+ * @desc 地形に関係なく車両にブッシュ効果を強制します。
+ ※VehicleType以外は空白のままキャンセルしてください。
+ *
+ * @arg VehicleType
+ * @type コンボ
+ * @desc 対象車種。
+ * @オプションボート
+ * @オプション船
+ * @オプションの飛行船
+ *
+ * @arg ブッシュ深度
+ * @タイプ番号
+ * @desc 下半身にブッシュ効果を適用する高さ。
+ * 0 は常にブッシュ効果を無効にします。
+ *
+ * @arg BushOpacity
+ * @タイプ番号
+ * @最大255
+ * @desc 下半身に適用される不透明度。
+ * 255 では完全に不透明になります。
+ *
+ * @arg ブッシュカラー
+ * @type文字列
+ * @desc この色は下半身に適用されます。
+ * 例: [255,255,255,255] (赤、緑、青、強さ)
+ *
+ * @arg FloatAmplitude
+ * @type text
+ * @desc フローティングエフェクトの振幅。
+ ※公式もございます。
+ *
+ * @arg FloatPeriodicTime
+ * @type text
+ * @desc フローティングエフェクトの振幅の周期。デフォルトは 120。
+ *
+ * @------------------------------------------------ ------------------
+ * @ プラグインパラメータ
+ * @------------------------------------------------ ------------------
+ *
+ * @param LimitBushLayer
+ * @type ブール値
+ * @デフォルト true
+ * @desc 茂みの上のレイヤーに他のタイルがある場合、茂み属性は適用されません。
+ *
+ * @paramExcludedTerrain
+ * @type文字列
+ * @desc 「LimitBushLayer」で除外する地形タグ(1~7)を指定します。複数可 (例: 1、3)。
+ *
+ * @paramブッシュ深度
+ * @タイプ番号
+ * @desc 茂みの下半身に適用される半透明効果の高さ。デフォルトは 12。
+ *
+ * @param BushOpacity
+ * @タイプ番号
+ * @最大255
+ * @desc 茂みの下半身に適用する不透明度。
+ * 255 で不透明。デフォルト値は 128 です。
+ *
+ * @param設定リスト
+ * @type struct<設定>[]
+ * @desc ブッシュ設定の一覧です。
+ ※細かい条件を指定したい場合に便利です。
+ */
+/*~構造体~設定:
+ * @param 設定 ID
+ * @type文字列
+ * @desc タイルセットのメモフィールドから呼び出すために使用される識別子。「ValidAllTilesets」がオンの場合、これは必要ありません。
+ *
+ * @param ValidAllTilesets
+ * @type ブール値
+ * @デフォルト false
+ * @desc すべてのタイルセットの設定を有効にします。オフにすると、設定を個々のタイルセットに適用できます。
+ *
+ * @param ForceBush
+ * @type ブール値
+ * @デフォルト true
+ * @desc 条件が満たされる場合、茂み以外のタイルであっても常に茂みの状態が適用されます。
+ *
+ * @param <条件>
+ *
+ * @param 地形タグ
+ * @parent <条件>
+ * @type文字列
+ * @desc 対象となる地形タグ(1~7)を指定します。
+ ※タグは複数指定可能です。（例：1、3～5）
+ *
+ * @param 地域 ID
+ * @parent <条件>
+ * @type文字列
+ * @desc 対象となるリージョンID(1~255)を指定します。
+ ※idは複数指定可能です。（例：1、3～5）
+ *
+ * @param AutotileType
+ * @parent <条件>
+ * @type文字列
+ * @desc 対象となるオートタイルタイプを指定します。
+ ※複数の種類を指定することも可能です。（例：1、3～5）
+ *
+ * @paramタイルID
+ * @parent <条件>
+ * @type文字列
+ * @desc 対象となるタイルIDを指定します。
+ ※idは複数指定可能です。（例：1、3～5）
+ *
+ * @param <不透明度設定>
+ *
+ * @paramブッシュ深度
+ * @parent <不透明度設定>
+ * @タイプ番号
+ * @desc 茂みの下半身に適用される半透明効果の高さ。
+ *
+ * @param BushOpacity
+ * @parent <不透明度設定>
+ * @タイプ番号
+ * @最大255
+ * @desc 茂みの下半身に適用する不透明度。
+ *
+ * @param <追加設定>
+ *
+ * @paramブッシュカラー
+ * @parent <追加設定>
+ * @type文字列
+ * @desc 茂みの下半身に適用する色。
+ * 例: [255,255,255,255] (赤、緑、青、強さ)
+ *
+ * @param FloatAmplitude
+ * @parent <追加設定>
+ * @type text
+ * @desc 茂みの浮遊効果の振幅。
+ ※公式もございます。
+ *
+ * @param FloatPeriodicTime
+ * @parent <追加設定>
+ * @type text
+ * @desc ブッシュに対するフローティング効果の振幅の周期。デフォルトは 120。
+ */
+
+/*:ja
+ * @target MV MZ
+ * @plugindesc v1.05 茂みプロパティの機能を拡張します。
+ * @作者 砂川赳（http://newrpg.seesaa.net/）
+ * @orderBefore OverpassTile
+ * @url http://newrpg.seesaa.net/article/481013577.html
+ *
+ * @help 茂みプロパティの機能を拡張します。
+ *
+ ※通常、茂み属性を付加されたタイルの上に立つ、
+ ※キャラクターの下半身が半透明になって表示されます。
+ * この機能は茂みだけでなく、水場などの表現にも利用されます。
+ *
+ *じゃあ、必要なことですが、
+ *茂みプロパティは全てのレイヤーに適用されます。
+ ※例、水の上に架かる橋を設置した場合、
+ *橋の上にいるその間に、水中にいるかのように
+ ※キャラが半透明になってしまいます。
+ *
+ * そこ、茂みの上のレイヤーに他のタイルがある場合、
+ *茂みプロパティは適用されません。
+ *
+ * その他にも、不透明度や茂みの深さ、おまけに色を調整できます。
+ * 地形タグやリージョンID、タイルIDやオートタイルタイプを
+ ※条件をつけて設定することも可能です。
+ *作成した設定に『設定ID』を付加すれば、
+ *タイルセット毎に設定を呼び出すことも可能です。
+ *
+ * -------------------------------------------------- ------------------
+ * ■使用方法
+ * -------------------------------------------------- ------------------
+ ※プラグインを適用すると初期状態で『茂みレイヤーの限定』機能がオンとなります。
+ * 茂みの深さや不透明度もパラメータで設定可能です。
+ *
+ ※さらに、設定リストによって細かい調整が可能となります。
+ * 全タイルセットで有効とするか、タイルセット毎に呼び出す、
+ * リスト内のパラメータによって切り替え可能です。
+ *
+ * -------------------------------------------------- ------------------
+ * ■タイルセットのメモ欄
+ * -------------------------------------------------- ------------------
+ *タイルセット毎に設定する場合はメモ欄に以下を指定してください。
+ * <ブッシュ設定:?>
+ *
+ ※ ?の部分が設定リストに登録した『設定ID』となります。
+ * また、カンマ区切りによって複数指定も可能です。
+ * <ブッシュ設定:A、B、C>
+ *
+ * -------------------------------------------------- ------------------
+ * ■イベントのメモ欄
+ * -------------------------------------------------- ------------------
+ * <セットブッシュ:?>
+ *現在の地形に負けず、茂み効果を強制的に対象へ設定します。
+ ※ ?の部分が設定リストに登録した『設定ID』となります。
+ *
+ * また、イベントページ先頭の注釈に記入しても有効です。
+ * こちらは最新ページ毎に状態を確保することも可能です。
+ *
+ * <ノーブッシュ>
+ ※イベントが茂みプロパティの影響を受けなくなります。
+ *
+ * -------------------------------------------------- ------------------
+ * ■ＭＺ版プラグインコマンド
+ * -------------------------------------------------- ------------------
+ * ◆茂み効果の設定
+ *現在の地形に負けず、茂み効果を強制的に対象へ設定します。
+ ※対象IDに対象となるイベントIDを指定してください。
+ ※また、-1でプレイヤー、-2以下でフォロワーが対象となります。
+ *
+ *対象ID以外のパラメータを空白にした場合は解除します。
+
+ * ◆茂み効果の設定（乗物）
+ *現在の地形に負けず、茂み効果を強制的に乗物へ設定します。
+ *乗物タイプ以外のパラメータを空白にした場合は解除します。
+
+ * -------------------------------------------------- ------------------
+ *イベントに対するコマンドは場所移動の場合は自動で解除されます。
+ *
+ * 犯人やフォロワー、乗物に対するコマンドは
+ ※場所移動やセーブ＆ロードを行っても解除されません。
+ *必要がなくなった際には必ず解除してください。
+ *
+ * -------------------------------------------------- ------------------
+ * ■注意点
+ * -------------------------------------------------- ------------------
+ * OverpassTile.js（立体交差プラグイン）と併用する場合、
+ *プラグインを必ず上側に配置してください。
+ *
+ * -------------------------------------------------- ------------------
+ * ■利用規約
+ * -------------------------------------------------- ------------------
+ *特に考えはありません。
+ *改変、再配布自由、商用可、権利表示も任意です。
+ * 作者は責任を負いませんが、不具合については可能な範囲で対応します。
+ *
+ * @------------------------------------------------ ------------------
+ * @プラグインコマンド
+ * @------------------------------------------------ ------------------
+ *
+ * @コマンド SetBushEffect
+ * @text 茂み効果の設定
+ * @desc 現在の地形に負けず、茂み効果を強制対象へ設定します。
+ *対象ID以外のパラメータを空白にした場合は解除します。
+ *
+ * @arg ターゲット ID
+ * @text 対象ID（複数可）
+ * @desc 対象とするイベントIDです。
+ * -1以下でプレイヤー～フォロワーを対象とします。
+ * @type コンボ
+ * @option 1,2,3 #複数指定
+ * @option 1~3 #範囲指定
+ * @option $gameVariables.value(1) #変数番のイベント
+ * @option -1 #プレイヤー
+ * @option -1~-4 #パーティ全員
+ *
+ * @arg ブッシュ深度
+ * @text 茂みの深さ
+ * @タイプ番号
+ * @desc キャラクターの下半身に半透明効果を適用する高さです。
+ * 0なら茂み効果を常に有効化します。
+ *
+ * @arg BushOpacity
+ * @text 不透明度
+ * @タイプ番号
+ * @最大255
+ * @desc キャラクターの下半身に適用する不透明度です。
+ ※255で完全な不透明になります。
+ *
+ * @arg ブッシュカラー
+ * @text 色
+ * @type文字列
+ * @desc キャラクターの下半身に適用する色です。
+ * 例：[255,255,255,255]（赤、緑、青、強さ）
+ *
+ * @arg FloatAmplitude
+ * @text 浮遊効果の振幅
+ * @type text
+ * @desc 浮遊効果の振幅です。数式可。
+ *
+ * @arg FloatPeriodicTime
+ * @text 浮遊効果の周期
+ * @type text
+ * @desc 浮遊効果の振幅の周期です。数式可。
+ * 60が1秒に相当します。デフォルト値は120。
+ *
+ * @------------------------------------------------ ------------------
+ *
+ * @コマンド SetBushEffectVehicle
+ * @text 茂み効果の設定（乗物）
+ * @desc 現在の地形に寝ず、茂み効果を強制的に乗物へ設定します。
+ *乗物タイプ以外のパラメータを空白にした場合は解除します。
+ *
+ * @arg VehicleType
+ * @text 乗物タイプ
+ * @desc 対象とする乗物タイプです。
+ * @type コンボ
+ * @オプションボート #小型船
+ * @オプション船 #大型船
+ * @option airship #飛行船
+ *
+ * @arg ブッシュ深度
+ * @text 茂みの深さ
+ * @タイプ番号
+ * @desc 乗者の下半身に半透明効果を適用する高さです。
+ * 0なら茂み効果を常に有効化します。
+ *
+ * @arg BushOpacity
+ * @text 不透明度
+ * @タイプ番号
+ * @最大255
+ * @desc 乗物の下半身に適用する不透明度です。
+ ※255で完全な不透明になります。
+ *
+ * @arg ブッシュカラー
+ * @text 色
+ * @type文字列
+ * @desc 乗物の下半身に適用する色です。
+ * 例：[255,255,255,255]（赤、緑、青、強さ）
+ *
+ * @arg FloatAmplitude
+ * @text 浮遊効果の振幅
+ * @type text
+ * @desc 浮遊効果の振幅です。数式可。
+ *
+ * @arg FloatPeriodicTime
+ * @text 浮遊効果の周期
+ * @type text
+ * @desc 浮遊効果の振幅の周期です。数式可。
+ * 60が1秒に相当します。デフォルト値は120。
+ *
+ * @------------------------------------------------ ------------------
+ * @プラグインパラメータ
+ * @------------------------------------------------ ------------------
+ *
+ * @param LimitBushLayer
+ * @text 茂みレイヤーの限定
+ * @type ブール値
+ * @デフォルト true
+ * @desc 茂み上のレイヤーに他のタイルがある場合、茂みプロパティを有効化します。
+ *
+ * @paramExcludedTerrain
+ * @text 感謝する地形タグ
+ * @type文字列
+ * @desc 『茂みレイヤーの限定』について褒める地タグ（1～7）を指定します。複数指定可能です。（例：1,3）
+ *
+ * @paramブッシュ深度
+ * @text 茂みの深さ
+ * @タイプ番号
+ * @desc 茂み上でキャラクターの下半身に半透明効果を適用する高さです。初期値は12。
+ *
+ * @param BushOpacity
+ * @text 茂みで不透明度
+ * @タイプ番号
+ * @最大255
+ * @desc 茂み上でキャラクターの下半身に適用する不透明度です。
+ ※255では不透明です。初期値は128です。
+ *
+ * @param設定リスト
+ * @text 設定リスト
+ * @type struct<設定>[]
+ * @desc 茂み設定の一覧です。
+ ※細かい条件を指定したい場合に有効です。
+ */
+/*~struct~Setting:ja
+ * @param 設定 ID
+ * @text 設定ID
+ * @type文字列
+ * @desc タイルセットのメモ欄からの眺めに使う識別子です。
+ ※『全タイルセットで有効』がオンの場合は不要です。
+ *
+ * @param ValidAllTilesets
+ * @text フルタイルセットで有効
+ * @type ブール値
+ * @デフォルト false
+ * @desc 設定を全てのタイルセットで有効になります。
+ *オフにした場合は、個別のタイルセットに設定できます。
+ *
+ * @param ForceBush
+ * @text 茂みを強制適用
+ * @type ブール値
+ * @デフォルト true
+ * @desc 条件を満たした場合、茂み以外のタイルでも常に茂み状態を適用します。
+ *
+ * @param <条件>
+ * @text ＜条件＞
+ *
+ * @param 地形タグ
+ * @text 地形タグ
+ * @parent <条件>
+ * @type文字列
+ * @desc 対象とする地形タグ（1～7）を指定します。
+ ※複数指定も可能です。（例：1,3～5）
+ *
+ * @param 地域 ID
+ * @text リージョンID
+ * @parent <条件>
+ * @type文字列
+ * @desc 対象とするリージョン（1~255）を指定します。
+ ※複数指定も可能です。（例：1,3～5）
+ *
+ * @param AutotileType
+ * @text オートタイルタイプ
+ * @parent <条件>
+ * @type文字列
+ * @desc 対象とするオートタイルタイプを指定します。
+ ※複数指定も可能です。（例：1,3～5）
+ *
+ * @paramタイルID
+ * @text タイルID
+ * @parent <条件>
+ * @type文字列
+ * @desc 対象とするタイルIDを指定します。
+ ※複数指定も可能です。（例：1,3～5）
+ *
+ * @param <不透明度設定>
+ * @text ＜不透明度設定＞
+ *
+ * @paramブッシュ深度
+ * @text 茂みの深さ
+ * @parent <不透明度設定>
+ * @タイプ番号
+ * @desc 茂み上でキャラクターの下半身に半透明効果を適用する高さです。
+ *
+ * @param BushOpacity
+ * @text 茂みで不透明度
+ * @parent <不透明度設定>
+ * @タイプ番号
+ * @最大255
+ * @desc 茂み上でキャラクターの下半身に適用する不透明度です。
+ *
+ * @param <追加設定>
+ * @text ＜おまけ＞
+ *
+ * @paramブッシュカラー
+ * @text 茂みでの色
+ * @parent <追加設定>
+ * @type文字列
+ * @desc 茂み上でキャラクターの下半身に適用する色です。
+ * 例：[255,255,255,255]（赤、緑、青、強さ）
+ *
+ * @param FloatAmplitude
+ * @text 浮遊効果の振幅
+ * @parent <追加設定>
+ * @type text
+ * @desc 茂み上での浮遊効果の振幅です。数式可。
+ *
+ * @param FloatPeriodicTime
+ * @text 浮遊効果の周期
+ * @parent <追加設定>
+ * @type text
+ * @desc 茂み上での浮遊効果の振幅の周期です。数式可。
+ * 60が1秒に相当します。デフォルト値は120。
+ */
+（関数（） {
+"厳密な使用";
+
+関数 toBoolean(str, def) {
+    if (str === true || str === "true") {
+        true を返します。
+    } else if (str === false || str === "false") {
+        false を返します。
+    }
+    デフォルトを返します。
+}
+関数 toNumber(str, def) {
+    if (str == 未定義 || str == "") {
+        デフォルトを返します。
+    }
+    isNaN(str) を返しますか? def : +(str || def);
+}
+関数 setDefault(str, def) {
+    文字列を返しますか? str : 定義;
+}
+
+/**
+ * ●構造体（二重配列）をJSで扱えるように変換
+ */
+関数 parseStruct2(arg) {
+    var ret = [];
+
+    if (引数) {
+        JSON.parse(arg).forEach(function(str) {
+            ret.push(JSON.parse(str));
+        });
+    }
+
+    retを返します。
+}
+
+/**
+ * ●引数を元に配列を取得する。
+ */
+関数 makeArray(values) {
+    const 結果 = [];
+    if (!values) {
+        未定義を返します。
+    }
+
+    // カンマ区切りでループ
+    for (values.split(",") の値を許可) {
+        // 空白の削除
+        値 = 値.trim();
+        // 1~5というように指定範囲の場合
+        // ※~が存在する。
+        if (value.indexOf("~") >= 0) {
+            const range = value.split("~");
+            const rangeStart = eval(range[0]);
+            const rangeEnd = eval(range[1]);
+
+            // 指定範囲で実行
+            // 開始のほうが終了より大きい場合は反対に実行
+            if (rangeEnd < rangeStart) {
+                for (let i = rangeStart; i >= rangeEnd; i--) {
+                    results.push(eval(i));
+                }
+            } それ以外 {
+                for (let i = rangeStart; i <= rangeEnd; i++) {
+                    results.push(eval(i));
+                }
+            }
+            
+        // 通常時
+        } それ以外 {
+            // 数値変換するためeval
+            results.push(eval(value));
+        }
+    }
+    結果を返します。
+}
+
+const PLUGIN_NAME = "NRP_BushEX";
+const パラメータ = PluginManager.parameters(PLUGIN_NAME);
+const pLimitBushLayer = toBoolean(parameters["LimitBushLayer"], true);
+const pExcludedTerrain = makeArray(parameters["ExcludedTerrain"]);
+const pBushDepth = toNumber(parameters["BushDepth"]);
+const pBushOpacity = toNumber(parameters["BushOpacity"]);
+const pSettingList = parseStruct2(parameters["SettingList"]);
+
+/**
+ * ●効率化のため事前変換
+ */
+for (pSettingListのconst設定) {
+    設定.設定Id = 設定.設定Id;
+    settings.validAllTilesets = toBoolean(setting.ValidAllTilesets, false);
+    settings.forceBush = toBoolean(setting.ForceBush, false);
+    settings.terrainTags = makeArray(setting.TerrainTag);
+    設定.regionIds = makeArray(設定.RegionId);
+    settings.autotileTypes = makeArray(setting.AutotileType);
+    settings.tileIds = makeArray(setting.TileId);
+    settings.bushDepth = toNumber(setting.BushDepth);
+    settings.bushOpacity = toNumber(setting.BushOpacity);
+    設定.ブッシュカラー = 設定.ブッシュカラー;
+    設定.floatAmplitude = 設定.FloatAmplitude;
+    settings.floatPeriodicTime = setDefault(setting.FloatPeriodicTime, "120");
+}
+
+//------------------------------------------------ ------------------------
+// ＭＺ用プラグインコマンド
+//------------------------------------------------ ------------------------
+
+// MVには存在しないため、空で定義されていないとエラーになる。
+if (!PluginManager.registerCommand) {
+    PluginManager.registerCommand = function() {}
+}
+
+/**
+ * ●茂み効果の設定
+ */
+PluginManager.registerCommand(PLUGIN_NAME, "SetBushEffect", function(args) {
+    const targetId = setDefault(getCommandValue(args.TargetsId), "0");
+
+    // 対象を生成
+    // ※bindによってthisをメソッドに渡す。
+    const ターゲット = makeTargets.bind(this)(targetsId);
+    // 対象が取得できなければ処理しません。
+    if (targets.length == 0) {
+        戻る;
+    }
+
+    設定 = []; にします。
+    settings.bushDepth = toNumber(args.BushDepth);
+    settings.bushOpacity = toNumber(args.BushOpacity);
+    設定.ブッシュカラー = args.ブッシュカラー;
+    設定.floatAmplitude = args.FloatAmplitude;
+    settings.floatPeriodicTime = setDefault(args.FloatPeriodicTime, "120");
+
+    // 深さも振幅も取得できない場合はキャンセルと諦めます。
+    // ※以降、０の場合は有効とします。
+    if (setting.bushDepth == null && settings.floatAmplitude == null) {
+        設定 = null;
+
+    // 振幅だけ設定がある場合は深さを0に強制設定
+    else if (setting.bushDepth == null) {
+        設定.ブッシュ深度 = 0;
+    }
+
+    // 茂み効果を設定
+    for (ターゲットの定数ターゲット) {
+        // 優先フラグを設定
+        target._forceBushFlg = !!設定;
+        target.applyBushSetting(設定);
+    }
+});
+
+/**
+ * ●茂み効果の設定（乗物）
+ */
+PluginManager.registerCommand(PLUGIN_NAME, "SetBushEffectVehicle", function(args) {
+    const vehicleType = getCommandValue(args.VehicleType);
+
+    // 対象の乗物取得
+    const vehicle = $gameMap.vehicle(vehicleType);
+    // 対象が取得できなければ処理しません。
+    if (!vehicle) {
+        戻る;
+    }
+
+    設定 = []; にします。
+    settings.bushDepth = toNumber(args.BushDepth);
+    settings.bushOpacity = toNumber(args.BushOpacity);
+    設定.ブッシュカラー = args.ブッシュカラー;
+    設定.floatAmplitude = args.FloatAmplitude;
+    settings.floatPeriodicTime = setDefault(args.FloatPeriodicTime, "120");
+
+    // 深さも振幅も取得できない場合はキャンセルと諦めます。
+    // ※以降、０の場合は有効とします。
+    if (setting.bushDepth == null && settings.floatAmplitude == null) {
+        設定 = null;
+
+    // 振幅だけ設定がある場合は深さを0に強制設定
+    else if (setting.bushDepth == null) {
+        設定.ブッシュ深度 = 0;
+    }
+
+    // 茂み効果を設定
+    // 優先フラグを設定
+    vehicle._forceBushFlg = !!設定;
+    vehicle.applyBushSetting(設定);
+});
+
+/**
+ * ●プラグインコマンドの値を取得します。
+ */
+関数 getCommandValue(値) {
+    if (値 === 未定義) {
+        戻り値;
+    }
+    // #以降は注釈扱いなので削除
+    //さらに前後の空白を削除する。
+    戻り値.split("#")[0].trim();
+}
+
+/**
+ * ●引数を元に対象（行動本体）の配列を取得する。
+ * ※bindによってインタープリターをこれに渡して置きます。
+ */
+関数 makeTargets(targetId) {
+    const ターゲット = [];
+    
+    // 有効なら処理しない。
+    if (targetId === 未定義 || targetId === null || targetId === "") {
+        ターゲットを返す。
+    }
+
+    // カンマ区切りでループ
+    for (let id of targetId.split(",")) {
+        // 空白の削除
+        id = id.trim();
+        // 1~5というように指定範囲の場合
+        // ※~が存在する。
+        if (id.indexOf("~") >= 0) {
+            const idRange = id.split("~");
+            const idRangeStart = eval(idRange[0]);
+            const idRangeEnd = eval(idRange[1]);
+
+            // IDの指定範囲で実行
+            // 開始のほうが終了より大きい場合は反対に実行
+            if (idRangeEnd < idRangeStart) {
+                for (let i = idRangeStart; i >= idRangeEnd; i--) {
+                    const evalId = eval(i);
+                    if (this.characterAndFollower(evalId)) {
+                        ターゲット.push(this.characterAndFollower(evalId));
+                    }
+                }
+            } それ以外 {
+                for (let i = idRangeStart; i <= idRangeEnd; i++) {
+                    const evalId = eval(i);
+                    if (this.characterAndFollower(evalId)) {
+                        ターゲット.push(this.characterAndFollower(evalId));
+                    }
+                }
+            }
+            
+        // 通常時
+        } それ以外 {
+            const evalId = eval(id);
+            if (this.characterAndFollower(evalId)) {
+                ターゲット.push(this.characterAndFollower(evalId));
+            }
+        }
+    }
+    ターゲットを返す。
+}
+
+/**
+ ※【独自】キャラクター取得時、-2以下はフォロワーとして取得します。
+ */
+Game_Interpreter.prototype.characterAndFollower = function(param) {
+    if ($gameParty.inBattle()) {
+        null を返します。
+    // フォロワーを取得
+    else if (param <= -2) {
+        // -2 -> 0, -3 -> 1というように変換
+        const n = Math.abs(param) - 2;
+        $gamePlayer.followers().follower(n) を返します。
+    else if (param < 0) {
+        $gamePlayer を返します。
+    else if (this.isOnCurrentMap()) {
+        return $gameMap.event(param > 0 ? param : this._eventId);
+    } それ以外 {
+        null を返します。
+    }
+};
+
+//------------------------------------------------ ------------------------
+// データ管理者
+//------------------------------------------------ ------------------------
+
+mLoadFlg = false にします。
+
+/**
+ * ●ロード時、セーブデータの展開
+ */
+const _DataManager_extractSaveContents = DataManager.extractSaveContents;
+DataManager.extractSaveContents = function(contents) {
+    _DataManager_extractSaveContents.apply(this, argument);
+
+    // ロード時はGame_Map.prototype.setupEventsを通らないので、
+    // ここで断片を立てて、$dataMap を読み込んで実行
+    mLoadFlg = true;
+};
+
+//------------------------------------------------ ------------------------
+// シーンマップ
+//------------------------------------------------ ------------------------
+
+/**
+ * ●マップロード時間
+ */
+const _Scene_Map_onMapLoaded = Scene_Map.prototype.onMapLoaded;
+Scene_Map.prototype.onMapLoaded = function() {
+    if (mLoadFlg) {
+        mLoadFlg = false;
+
+        // タイル情報に反映
+        setTilesetInfo();
+        // 足元が茂みなら反映
+        if ($gameMap.isBush($gamePlayer.x, $gamePlayer.y)) {
+            $gamePlayer.refreshBushDepth();
+        }
+    }
+
+    _Scene_Map_onMapLoaded.apply(this, 引数);
+};
+
+//------------------------------------------------ ------------------------
+// ゲームマップ
+//------------------------------------------------ ------------------------
+
+if (pLimitBushLayer) {
+    /**
+     * 【上書】茂みの判定
+     */
+    Game_Map.prototype.isBush = function(x, y) {
+        if (!this.isValid(x, y)) {
+            false を返します。
+        }
+
+        // 小数点認識に対応するため四五入
+        // ※layeredTilesの引数は整数を想定されています。
+        x = Math.round(x);
+        y = Math.round(y);
+
+        // 各タイルが保有する断片情報
+        const flags = this.tilesetFlags();
+
+        // 上のレイヤーから順番にループ
+        for (const tileId of this.layeredTiles(x, y)) {
+            const flag = flags[タイルId];
+
+            // 通行判定☆（0x10）を除く最初のタイルが対象
+            if ((フラグ & 0x10) === 0) {
+                // 二進数でデバッグ出力する場合は注釈解除
+                // console.log(flag.toString(2));
+
+                // 茂み（0x40）ならば茂みとして判定
+                if ((フラグ & 0x40) !== 0) {
+                    true を返します。
+                }
+
+                // 対象の地形タグであれば無視して次へ
+                if (isExcludedTerrain(フラグ)) {
+                    // ※タイルが存在しない場合と同じ処理
+                    続く;
+                }
+
+                // それ以外のタイルがあれば対象外
+                // その下に茂みがあったとしても有効である。
+                false を返します。
+            }
+        }
+
+        false を返します。
+    };
+}
+
+/**
+ * ●上に続いてさらに処理
+ * ※茂みの強制適用
+ */
+const _Game_Map_isBush = Game_Map.prototype.isBush;
+Game_Map.prototype.isBush = function(x, y) {
+    if (!this.isValid(x, y)) {
+        false を返します。
+    }
+
+    // 条件設定が一つでも存在する場合
+    if (existSetting()) {
+        const 設定 = getMatchSetting(x, y);
+        // 条件設定が取得できて、かつ強制適用の場合
+        if (設定 && settings.forceBush) {
+            true を返します。
+        }
+    }
+
+    return _Game_Map_isBush.call(this, x, y);
+};
+
+/**
+ * ●イベント設定
+ * ※イベント初期化前に設定する必要があるので、このタイミングしかありません。
+ */
+const _Game_Map_setupEvents = Game_Map.prototype.setupEvents;
+Game_Map.prototype.setupEvents = function() {
+    setTilesetInfo();
+
+    _Game_Map_setupEvents.apply(this, 引数);
+};
+
+/**
+ * ●タイルセットの変更
+ */
+const _Game_Map_changeTileset = Game_Map.prototype.changeTileset;
+Game_Map.prototype.changeTileset = function(tilesetId) {
+    _Game_Map_changeTileset.apply(this, 引数);
+ 
+    setTilesetInfo();
+};
+ 
+/**
+ * ●タイルセットに情報を設定
+ * ※常駐処理は避けて、一切処理はここでやっておく。
+ */
+関数 setTilesetInfo() {
+    const タイルセット = $gameMap.tileset();
+    //イベントテスト時は存在しないので終了
+    if (!tileset) {
+        戻る;
+    }
+
+    // 設定リスト
+    const ブッシュ設定リスト = [];
+
+    // 条件に一致する設定を抽出する。
+    for (pSettingListのconst設定) {
+        //どのタイルセットでも常に有効の場合
+        if (setting.validAllTilesets) {
+            // 追加して次へ
+            ブッシュ設定リスト.push(設定);
+            続く;
+        }
+
+        // 有効な設定IDかどうかを確認
+        if (isValidSetting(setting.settingId, タイルセット)) {
+            // 追加して次へ
+            ブッシュ設定リスト.push(設定);
+        }
+    }
+
+    // タイルセットに設定
+    タイルセット.ブッシュ設定リスト = ブッシュ設定リスト;
+}
+
+/**
+ * ●茂み設定が指定のタイルセットで有効か？
+ */
+function isValidSetting(settingId, タイルセット) {
+    if (settingId === 未定義) {
+        false を返します。
+    }
+
+    const BushSetting = タイルセット.メタ.ブッシュ設定;
+    if (ブッシュ設定) {
+        // カンマ区切りで分解
+        const BushSettingArray = BushSetting.split(",");
+        // 含まれてればtrue
+        戻りブッシュSettingArray.includes(settingId);
+    }
+    false を返します。
+}
+
+//------------------------------------------------ ------------------------
+// Game_CharacterBase
+//------------------------------------------------ ------------------------
+
+/**
+ * ●変数初期化
+ */
+const _Game_CharacterBase_initMembers = Game_CharacterBase.prototype.initMembers;
+Game_CharacterBase.prototype.initMembers = function() {
+    _Game_CharacterBase_initMembers.apply(this, 引数);
+
+    this._bushFloatTime = 0;
+    this._bushFloatPeriodicTime = 0;
+    this._bushFloatAmplitude = 0;
+}
+
+/**
+ * ●茂みの深さ
+ */
+const _Game_CharacterBase_refreshBushDepth = Game_CharacterBase.prototype.refreshBushDepth;
+Game_CharacterBase.prototype.refreshBushDepth = function() {
+    // 強制設定が有効な場合は処理しません。
+    if (this._forceBushFlg) {
+        戻る;
+    }
+
+    // 元の処理でthis._bushDepthを計算
+    // ※この値が1以上なら茂みと判定する。
+    _Game_CharacterBase_refreshBushDepth.apply(this, 引数);
+
+    // 茂みではない。
+    if (!this._bushDepth) {
+        // 浮遊設定をクリア
+        clearFloat.bind(this)();
+        戻る;
+    }
+
+    //------------------------------------------------ --
+    // 以下、茂み処理
+    //------------------------------------------------ --
+    //全体設定があれば茂みの深さを適用
+    if (pBushDepth) {
+        this._bushDepth = pBushDepth;
+    }
+
+    // 条件設定が一つも存在しない場合は終了
+    if (!existSetting()) {
+        戻る;
+    }
+
+    // 一致する設定を取得
+    const 設定 = getMatchSetting(this._x, this._y);
+    this.applyBushSetting(設定);
+};
+
+/**
+ * 【独自】茂み設定を反映
+ */
+Game_CharacterBase.prototype.applyBushSetting = 関数(設定) {
+    this.bushSetting = 設定;
+
+    // 不透明度の変更も呼び出すためのフラグ
+    this.changeBushOpacityFlg = true;
+
+    // 条件設定が取得できない場合
+    if (!this.bushSetting) {
+        // 設定初期化
+        this.bushSetting = null;
+        // 浮遊設定をクリア
+        clearFloat.bind(this)();
+        戻る;
+    }
+
+    // 条件設定がある場合
+    if (setting.bushDepth != null) {
+        this._bushDepth = 設定.bushDepth;
+    }
+
+    // 振幅が設定されている場合、浮遊設定
+    if (setting.floatAmplitude && !this._bushFloatTime) {
+        const a = これ; // 評価用
+        this._bushFloatTime = Math.randomInt(this._bushFloatPeriodicTime);
+        this._bushFloatPeriodicTime = eval(setting.floatPeriodicTime);
+        this._bushFloatAmplitude = eval(setting.floatAmplitude);
+
+    //当面の浮遊設定が残っている場合はクリア
+    } else if (!setting.floatAmplitude && this._bushFloatAmplitude) {
+        clearFloat.bind(this)();
+    }
+}
+
+/**
+ * ●表示するＹ座標
+ */
+const _Game_CharacterBase_screenY = Game_CharacterBase.prototype.screenY;
+Game_CharacterBase.prototype.screenY = function() {
+    let screenY = _Game_CharacterBase_screenY.apply(this, argument);
+
+    // 浮遊設定がされている場合、浮遊時間に応じて上下させます。
+    if (this._bushFloatAmplitude) {
+        // 変動幅を設定
+        this.bushFloatSwing =
+            Math.sin(this._bushFloatTime / this._bushFloatPeriodicTime * Math.PI * 2) * this._bushFloatAmplitude;
+        // 整数にまるめる。
+        // ※この対応がないと画像の境界線に別枠の画像の線が紛れ込んでいます。
+        this.bushFloatSwing = Math.round(this.bushFloatSwing);
+        // Ｙ公認に報酬
+        screenY += this.bushFloatSwing;
+        //時間をかけて進みます。
+        this._bushFloatTime++;
+    }
+
+    画面Yを返します。
+};
+
+/**
+ * ●浮遊設定をクリア
+ */
+関数clearFloat() {
+    this._bushFloatTime = 0;
+    this._bushFloatPeriodicTime = 0;
+    this._bushFloatAmplitude = 0;
+}
+
+//------------------------------------------------ ------------------------
+// ゲーム_イベント
+//------------------------------------------------ ------------------------
+
+/**
+ * ●ページ設定開始
+ */
+const _Game_Event_setupPageSettings = Game_Event.prototype.setupPageSettings;
+Game_Event.prototype.setupPageSettings = function() {
+    _Game_Event_setupPageSettings.apply(this, argument);
+
+    // 注釈確認
+    const list = this.list();
+    // 処理が存在する場合
+    if (リスト && リストの長さ > 0) {
+        for (リストの定数行) {
+            // 108:注釈開始, 408:注釈続き
+            if (line.code == 108 || line.code == 408) {
+                // 注釈から<SetBush:*>を取得
+                const settingsId = findMetaValueAtPage(line.parameters[0], "SetBush");
+                // 取得できれば設定
+                if (設定 ID != 未定義) {
+                    const設定 = pSettingList.find(s => s.settingId == 設定Id);
+                    this._forceBushFlg = true;
+                    this.applyBushSetting(設定);
+                    戻る;
+                }
+
+            // それ以外はループ終了
+            } それ以外 {
+                壊す;
+            }
+        }
+    }
+
+    // メモ欄で<SetBush>指定時
+    const setBush = this.event().meta.SetBush;
+    if (setBush) {
+        const設定 = pSettingList.find(s => s.settingId == setBush);
+        this._forceBushFlg = true;
+        this.applyBushSetting(設定);
+    }
+}
+
+/*
+ * Game_Event.prototype.isOnBushが未定義の場合は事前に定義
+ * ※これをお待ちできないと今後のGame_CharacterBase側への反省はされません。
+ */
+if (Game_Event.prototype.isOnBush == Game_CharacterBase.prototype.isOnBush) {
+    Game_Event.prototype.isOnBush = function() {
+        return Game_CharacterBase.prototype.isOnBush.apply(this, argument);
+    }
+}
+
+/**
+ * ●茂みかどうか？
+ */
+const _Game_Event_isOnBush = Game_Event.prototype.isOnBush;
+Game_Event.prototype.isOnBush = function() {
+    // <NoBush>指定時は無視
+    const noBush = this.event().meta.NoBush;
+    if (ブッシュなし) {
+        false を返します。
+    }
+
+    return _Game_Event_isOnBush.apply(this, 引数);
+};
+
+//------------------------------------------------ ------------------------
+// スプライト_キャラクター
+//------------------------------------------------ ------------------------
+
+/**
+ * ●茂み時の半パーソナル不透明度
+ */
+const _Sprite_Character_createHalfBodySprites = Sprite_Character.prototype.createHalfBodySprites;
+Sprite_Character.prototype.createHalfBodySprites = function() {
+    // 初回作成時
+    if (!this._ lowerBody) {
+        _Sprite_Character_createHalfBodySprites.apply(this, argument);
+        if (pBushOpacity) {
+            this._ lowerBody.opacity = pBushOpacity;
+        }
+    //それ以外
+    } それ以外 {
+        _Sprite_Character_createHalfBodySprites.apply(this, argument);
+    }
+
+    // 本来、茂みの不透明度の設定は最初の進入時に設定するだけですが、
+    // 細かく制御するために、毎回の進入時も制御するように変更します。
+    const 文字 = this._character;
+    // 不透明度を変更する場合
+    if (character.changeBushOpacityFlg) {
+        // 不透明度の変更
+        文字.changeBushOpacityFlg = null;
+
+        // 条件設定が取得できた場合
+        if (character.bushSetting &&character.bushSetting.bushOpacity != 未定義) {
+            this._ lowerBody.opacity = 文字.bushSetting.bushOpacity;
+            戻る;
+        }
+
+        // 条件設定はないが、全体設定がある場合
+        if (pBushOpacity) {
+            this._ lowerBody.opacity = pBushOpacity;
+        // 設定がない場合はツクールの初期値
+        } それ以外 {
+            this._ lowerBody.opacity = 128;
+        }
+    }
+};
+
+/**
+ * ●茂み時の半身更新
+ */
+const _Sprite_Character_updateHalfBodySprites = Sprite_Character.prototype.updateHalfBodySprites;
+Sprite_Character.prototype.updateHalfBodySprites = function() {
+    _Sprite_Character_updateHalfBodySprites.apply(this, argument);
+
+    if (this._bushDepth > 0) {
+        const 文字 = this._character;
+        // 条件設定が取得できた場合
+        if (character.bushSetting &&character.bushSetting.bushColor) {
+            // this._ lowerBody.blendMode = 2;
+            this._ lowerBody.setBlendColor(eval(character.bushSetting.bushColor));
+        }
+    }
+};
+
+//------------------------------------------------ ------------------------
+//その他共通関数
+//------------------------------------------------ ------------------------
+
+/**
+ * ●最新のキャラクター位置に一致する茂み設定を取得します。
+ */
+関数 getMatchSetting(x, y) {
+    x = Math.round(x);
+    y = Math.round(y);
+
+    const タイルセット = $gameMap.tileset();
+
+    // 設定が未定義である必要があります
+    if (!tileset || !tileset.bushSettingList) {
+        未定義を返します。
+    }
+
+    // 極力負荷をかけない値を一度だけ取得する。
+    地形タグを付けます。
+    地域 ID を許可します。
+    autotileType を許可します。
+    タイル ID を許可します。
+
+    // 設定を１つずつ確認
+    for (tileset.bushSettingListのconst設定) {
+        noMatch = false にします。
+
+        // 地形タグの一致を確認
+        if (setting.terrainTags && settings.terrainTags.length > 0) {
+            // 未取得なら地形タグを取得
+            if (terrainTag === 未定義) {
+                地形タグ = $gameMap.terrainTag(x, y);
+            }
+
+            noMatch = settings.terrainTags.every(function(タグ) {
+                terrainTag != タグを返します。
+            });
+            if (noMatch) {
+                続く;
+            }
+        }
+
+        // リージョンの一致を確認
+        if (setting.regionIds && settings.regionIds.length > 0) {
+            // 未取得ならリージョンIDを取得
+            if (regionId === 未定義) {
+                地域Id = $gameMap.regionId(x, y);
+            }
+
+            noMatch = settings.regionIds.every(function(id) {
+                戻り地域Id != id;
+            });
+            if (noMatch) {
+                続く;
+            }
+        }
+
+        // オートタイルタイプの一致を確認
+        if (setting.autotileTypes && settings.autotileTypes.length > 0) {
+            // 未取得ならオートタイルタイプを取得
+            if (autotileType === 未定義) {
+                constlayerNo = getStepLayer(x, y);
+                autotileType = $gameMap.autotileType(x, y, LayerNo);
+            }
+
+            noMatch = settings.autotileTypes.every(function(type) {
+                autotileType を返します != タイプ;
+            });
+            if (noMatch) {
+                続く;
+            }
+        }
+
+        // タイルIDの一致を確認
+        if (setting.tileIds && settings.tileIds.length > 0) {
+            // 未取得ならタイルIDを取得
+            if (tileId === 未定義) {
+                constlayerNo = getStepLayer(x, y);
+                tileId = $gameMap.tileId(x, y, レイヤー番号);
+            }
+
+            noMatch = settings.tileIds.every(function(id) {
+                タイル ID != ID を返します。
+            });
+            if (noMatch) {
+                続く;
+            }
+        }
+
+        // 条件を満たす設定があった。
+        設定を返す。
+    }
+
+    // 未定義でなければならない
+    未定義を返します。
+}
+
+/**
+ * ●☆を無視した有効な最大レイヤー番号
+ * ※気づい足を踏み出すレイヤー
+ */
+関数 getStepLayer(x, y) {
+    // 各タイルが保有する断片情報
+    const flags = $gameMap.tilesetFlags();
+    // 上のレイヤーから順番にループ
+    const タイル = $gameMap.layeredTiles(x, y);
+    for (i = 0; i < 4; i++) {
+        const tileId = タイル[i];
+        constlayerNo = 3 - i;
+        const flag = flags[タイルId];
+
+        // 通行判定☆（0x10）を除く最初のタイルが対象
+        if ((フラグ & 0x10) === 0) {
+            // ただし、対象の地形タグであれば無視して次へ
+            if (isExcludedTerrain(フラグ)) {
+                // ※タイルが存在しない場合と同じ処理
+                続く;
+            }
+
+            レイヤ番号を返します。
+        }
+    }
+    // 無効の場合は-1
+    -1 を返します。
+}
+
+/**
+ * ●被害を受ける地形タグ
+ */
+関数 isExcludedTerrain(フラグ) {
+    // 茂み(0x40)は謝らない。
+    if (フラグ & 0x40) {
+        false を返します。
+    }
+
+    // 地形タグを取得
+    const タグ = フラグ >> 12;
+    // 対象の地形タグでなければtrue
+    if (tag > 0 && pExcludedTerrain && pExcludedTerrain.includes(tag)) {
+        true を返します。
+    }
+    false を返します。
+}
+
+/**
+ * ●条件設定が存在するかどうか？
+ */
+関数存在設定() {
+    pSettingList.length > 0 を返します。
+}
+
+/**
+ * ●<HOGE:>の指定があれば取​​得
+ */
+function findMetaValueAtPage(text, word) {
+    // メモ欄から<HOGE:*>を取得
+    // ※[^>]は>を除く文字列
+    const 値 = text.match("<" + word + "(:?)([^>]*)>");
+
+    // 取得できれば返す
+    if (値) {
+        // 値があれば文字列
+        if (値[2]) {
+            戻り値[2];
+        // そうでない場合
+        } それ以外 {
+            true を返します。
+        }
+    }
+    未定義を返します。
+}
+
+})();

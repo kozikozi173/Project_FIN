@@ -1,0 +1,722 @@
+// ================================================ =============================
+// PictureAnimation.js
+// ------------------------------------------------ ----------------------------
+//（C）2015トリアコンタン
+//このソフトウェアはMITライセンスの下でリリースされています。
+// http://opensource.org/licenses/mit-license.php
+// ------------------------------------------------ ----------------------------
+// バージョン
+// 1.6.12020/12/061.6.0の機能的である最後のセルの達成のフレーム
+// 1.6.0 2020/10/24絵のアニメーション、次のコマンドに飛行し設定をする
+// 1.5.102020/01/30二のセル番号を取得するスクリプトのステップを2
+// 1.5.9 2020/01/26アニメーション中の絵を別の絵にみからて表示したとき、クロスフェード用の半透明えが待ってます属性用用を確認
+// 1.5.8 2019/10/27アニメーションが1年の属性に、非会話の群位置がなり
+// 1.5.7 2019/04/20コマンド「PA_SOUND」射「1」二のセルを指定されたとき、アニメーションました
+// 1.5.62019/03/03組み合わせ外の絵のアニメーションダウンロード効果音コンサートを無効する…
+// 1.5.5 2019/02/13コマンド「PA_SET_CELL」コマンド0番（メのセル）
+// 1.5.42019/02/091.5.3の間違い犯セルエラーを照るでアニメゲーム
+// 1.5.3 2019/02/27セルビルドのその指定でアニメ再生するさ、Kのセルがもう1番にして
+// 1.5.2 2018/03/04正距離横でアニメーション絵を表示した後、最適で絵の表示をしていいに表示
+// 1.5.1 2017/08/22アニメーション再生的、セル数が完了別のアニメーションになりたを受ける
+// 1.5.02017/07/03交活アニメーションの削除当このセルになるかもうを選択する機能をする
+// 1.4.02016/09/03アニメーションにんて指定するSEを演する機能をする
+// 1.3.22016/05/11クロスフェードを指定していた方に2回音偽表示でエラーエラー属性エラーを確認
+//1.3.12016/03/15忍上に戦闘アニメを表示するプラグイン「PictureOnAnimation」との競合を比較
+//ここを中央にいいクロスフェードを選びそして表示位置がずれた問題を確認
+// 1.3.0 2016/02/28セル＃を変数と組み合わせ変数をする
+//処理の負荷をする
+// 1.2.3 2016/02/07戦闘これ、アニメーションのアニメーションができるように写
+//1.2.22016/01/24空の絵がありする
+// 1.2.12016/01/16プラハ画像を描いて画像→アニメーション準備→画像表示の順で実行した
+//表にエラーが発生する
+//1.2.02016/01/04セルの脱を自由に指定する機能をする
+//セルの最大数を100から200に拡大
+// 1.1.22015/12/24クロスフェード画像画像に越しました
+// 1.1.12015/12/21絵のファイル名を連番法で特定する目的をする
+//アニメーションの強制された機能をする
+//1.0.02015/12/19初版
+// ------------------------------------------------ ----------------------------
+// [ブログ]：https：//triacontane.blogspot.jp/
+// [Twitter]：https://twitter.com/triacontane/
+// [GitHub]：https://github.com/triacontane/
+// ================================================ =============================
+
+/ *：
+ *@plugindesc絵のアニメーション
+ *@authorトリアコンタン
+ *
+ *@param1のセルに
+ *@descアニメーションアニメアニメーションのアニメーションます。
+ * @default true
+ * @type boolean
+ *
+ *@help脚分類フレーム配置アニメーションをアニメーションします。
+ *アニメーションできいセル画像​​（※）を
+ *このコマンドをコマンドしてください。
+ *
+ * 1.絵のアニメーション（プラグインコマンド）
+ * 2.絵の表示（通常のコマンドコマンド）
+ * 3.絵のアニメーション（プラグインコマンド）
+ * 4.絵のアニメーション（プラグインコマンド）
+ *
+ ※※配置方法はありの3通りがあります。
+ *正：セルを決定ててかを一のファイルなります。
+ *横：セルを横に並べててを一のファイルなります。
+ *連番：連番の写真を集めてします。（元の部分はれの文字列）
+ * original00.png（サムネイルの表示で指定するファイルファイル）
+ * original01.png
+ *original02.png..。
+ *
+ *要注意！配置方法の連番を展開する、展開
+ *未使用ファイル可能ある性があります。
+ *その属性、なりたたたてあり等のビーコンが得です。
+ *
+ *上、アニメーションアニメーション登録用、プラグインコマンドから
+ *セル番号を入力指定するり、変数の値とセル番号を入力することます。
+ *紙芝居の絵描写や、条件
+ *有効です。
+ *
+ *プラグインコマンド
+ *タイプコマンド「プラグインコマンド」から。
+ *（四変数はスペースで区にする）
+ *
+ *PA_INITまたは
+ *アニメーションのアニメーション[セル数][フレーム数][セル配置方法][フェドタイム]
+ *アニメーションをアニメーションする準備をします。
+ ※「よの表示」のされに実行てください。
+ *セル画：アニメーションするセル画の数（黒200枚）
+ *フレーム数：アニメーションのフレーム数（アニメーション1回設定）
+ *セル配置方向：セルの配置（縦または横または連番）
+ *フェードタイム：画像になりかるフレーム数（0になりフェドできる）
+ *使用例：PA_INIT410連番20
+ *
+ *PA_STARTまたは
+ *絵のアニメーション[絵の配列][アニメーション配列]
+ *脚下絵の絵のアニメーションをします。
+ *一周アニメーションは自動で止あります。
+ *
+ *アニメーションのタイプは3のランがあります。
+ *例：セル数が4の
+ *タイプ1：1→2→3→4→1→2→3→4..。
+ *タイプ2：1→2→3→4→3→2→1→2..。
+ *タイプ3：好きな配列を着で指定（セルのアップ値は1です）
+ *使用例：PA_START 1 2
+ * PA_START 1 3 [1,2,1,3,1,4]
+ *
+ *PA_START_LOOPまたは
+ *アニメーションのアニメーションアニメーション[アニメーションタイプ][クリスマス配列]
+ *脚下絵の絵のアニメーションをします。
+ *延されたなりますアニメーションがますます。
+ *使用例：PA_START_LOOP 1 2
+ * PA_START_LOOP 1 3 [1,2,1,3,1,4]
+ *
+ *PA_STOPまたは
+ *絵のアニメーション[絵絵]
+ *簿表絵の絵のアニメーションをなしします。
+ *最上セルにありたJOBでアニメーションが止あります。
+ *使用例：PA_STOP 1
+ *
+ *PA_STOP_FORCEまたは
+ *絵のアニメーション
+ *簿表絵の絵のアニメーションをなしします。
+ *アニメーションしされますアニメーションが止あります。
+ *使用例：PA_STOP_FORCE 1
+ *
+ *PA_SET_CELLまたは
+ *絵のアニメーションセル設定[絵番号][セル題][ウェイトあり]
+ *アニメーションのセルを追加設定します。（セルのピクセルは1です）
+ *いっぱいのアニメーションアニメーションをします。
+ *ホイ持ちを設定する、クロスフェード中は必の実行を予約します。
+ *使用例：PA_SET_CELL 1 3
+ *
+ *PA_PROG_CELLまたは
+ *絵のアニメーションセルダクト[絵さん][喜あり]
+ *アニメーションのセルを先にコメントます。
+ *いっぱいのアニメーションアニメーションをします。
+ *ホイ持ちを設定する、クロスフェード中は必の実行を予約します。
+ *使用例：PA_PROG_CELL1機あり
+ *
+ *PA_SET_VARIABLEまたは
+ *絵のアニメーションセル変数の設定[画像変数][変数変数]
+ *アニメーションのセルを指定する変数と入力ます。
+ *変数の値があります表示しです。
+ *使用例：PA_SET_VARIABLE 1 2
+ *
+ *PA_SOUNDまたは
+ *アニメーションのアニメーション効果音[セル番号]
+ *アニメーションのセルが切れわた時で効果音をコンサートします。
+ *このコマンドの実行されたコマンド「SEの実行」を実行する
+ *その場でSEはコンサートする、絵のアニメーション
+ *コンサート歳になります。
+ *アニメーションのアニメーション前に実行してください。
+ *
+ *PA_WAITまたは
+ *絵のアニメーション[絵絵]
+ *サインできなるタイトルのアニメーションが接するときします。
+ *
+ *スクリプト
+ *
+ *アニメーション中の忍順現在のセル番号を取得します。
+ *タイプコマンド「変数の操作」や「条件分岐」で使用可能ます。
+ *忍を表示してくださいエラー計算エラーになります。
+ * $ gameScreen.picture（1）.cell; //絵画像[1]のセルを選
+ *
+ *利用ですか：
+ *作者に無断で天使、再ビジネスができるで、利用分類（商、18禁利用等）
+ *起きもすはありません。
+ *このプラグインはなんしてできます。
+ * /
+（関数（） {
+    '厳密に使用';
+    var pluginName ='PictureAnimation';
+
+    var settings = {
+        / * maxCellAnimation：セル数の最大値* /
+        maxCellAnimation：200
+    };
+
+    var getParamString = function（paramNames）{
+        if（！Array.isArray（paramNames））paramNames = [paramNames];
+        for（var i = 0; i <paramNames.length; i ++）{
+            var name = PluginManager.parameters（pluginName）[paramNames [i]];
+            if（name）return name;
+        }
+        戻る '';
+    };
+
+    var getParamBoolean = function（paramNames）{
+        var value = getParamString（paramNames）;
+        戻り値.toUpperCase（）==='ON' || value.toUpperCase（）==='TRUE';
+    };
+
+    // ================================================ =============================
+    //クラスター
+    //プラグインパラメータインコマンドパラメータの作成やチェックをします
+    // ================================================ =============================
+    var getCommandName = function（command）{
+        return（コマンド||''）.toUpperCase（）;
+    };
+
+    var getArgArrayString = function（args、upperFlg）{
+        var values = getArgString（args、upperFlg）;
+        return（values ||''）.split（'、'）;
+    };
+
+    var getArgArrayNumber = function（args、min、max）{
+        if（！args）{
+            戻る [];
+        }
+        var values = getArgArrayString（args.substring（1、args.length-1）、false）;
+        if（arguments.length <2）min = -Infinity;
+        if（arguments.length <3）max = Infinity;
+        for（var i = 0; i <values.length; i ++）values [i] =（parseInt（values [i]、10）|| 0）.clamp（min、max）;
+        戻り値;
+    };
+
+    var getArgString = function（arg、upperFlg）{
+        arg = convertEscapeCharacters（arg）;
+        upperFlgを返しますか？arg.toUpperCase（）：arg;
+    };
+
+    var getArgNumber = function（arg、min、max）{
+        if（arguments.length <2）min = -Infinity;
+        if（arguments.length <3）max = Infinity;
+        return（parseInt（convertEscapeCharacters（arg）、10）|| 0）.clamp（min、max）;
+    };
+
+    var convertEscapeCharacters = function（text）{
+        if（text == null）text ='';
+        var window = SceneManager._scene._windowLayer.children [0];
+        リターンウィンドウ？window.convertEscapeCharacters（text）：テキスト;
+    };
+
+    // ================================================ =============================
+    //パラメータの取得と整形
+    // ================================================ =============================
+    var param = {};
+    param.returnToFirstCell = getParamBoolean（['ReturnToFirstCell'、'ころのセルにあり']）;
+
+    // ================================================ =============================
+    // Game_Interpreter
+    //プラグインコマンドを適用します。
+    // ================================================ =============================
+    var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+    Game_Interpreter.prototype.pluginCommand = function（command、args）{
+        _Game_Interpreter_pluginCommand.call（this、command、args）;
+        this.pluginCommandPictureAnimation（command、args）;
+    };
+
+    Game_Interpreter.prototype.pluginCommandPictureAnimation = function（command、args）{
+        var pictureNum、animationType、picture、cellNumber、frameNumber、direction、fadeDuration、wait、customArray;
+        スイッチ（getCommandName（command））{
+            ケース'PA_INIT'：
+            ケース'アニメーションのアニメーション'：
+                cellNumber = getArgNumber（args [0]、1、settings.maxCellAnimation）;
+                frameNumber = getArgNumber（args [1]、1、9999）;
+                方向=getArgString（args [2]、true）|| '表';
+                およびfadeDuration=getArgNumber（args [3]、0、9999）|| 0;
+                $ gameScreen.setPicturesAnimation（cellNumber、frameNumber、direction、fadeDuration）;
+                壊す;
+            ケース'PA_SOUND'：
+            ケース'アニメーションのアニメーション効果音'：
+                cellNumber = getArgNumber（args [0]、1、settings.maxCellAnimation）;
+                this.reservePaSound（cellNumber）;
+                壊す;
+            ケース'PA_START'：
+            ケース'アニメーションのアニメーション'：
+                pictureNum = getArgNumber（args [0]、1、$ gameScreen.maxPictures（））;
+                AnimationType = getArgNumber（args [1]、1、3）;
+                customArray = getArgArrayNumber（args [2]、1、settings.maxCellAnimation）;
+                画像=$gameScreen.picture（pictureNum）;
+                if（picture）picture.startAnimationFrame（animationType、false、customArray）;
+                壊す;
+            ケース'PA_START_LOOP'：
+            ケース'鬼のアニメーションアニメーション'：
+                pictureNum = getArgNumber（args [0]、1、$ gameScreen.maxPictures（））;
+                AnimationType = getArgNumber（args [1]、1、3）;
+                customArray = getArgArrayNumber（args [2]、1、settings.maxCellAnimation）;
+                画像=$gameScreen.picture（pictureNum）;
+                if（picture）picture.startAnimationFrame（animationType、true、customArray）;
+                壊す;
+            ケース'PA_STOP'：
+            ケース'アニメーションのアニメーション'：
+                pictureNum = getArgNumber（args [0]、1、$ gameScreen.maxPictures（））;
+                画像=$gameScreen.picture（pictureNum）;
+                if（picture）picture.stopAnimationFrame（false）;
+                壊す;
+            ケース'PA_STOP_FORCE'：
+            ケース'アニメーションのアニメーションフラッシュ'：
+                pictureNum = getArgNumber（args [0]、1、$ gameScreen.maxPictures（））;
+                画像=$gameScreen.picture（pictureNum）;
+                if（picture）picture.stopAnimationFrame（true）;
+                壊す;
+            ケース'PA_SET_CELL'：
+            ケース'アニメーションのアニメーションセル設定'：
+                pictureNum = getArgNumber（args [0]、1、$ gameScreen.maxPictures（））;
+                cellNumber = getArgNumber（args [1]、0、settings.maxCellAnimation）;
+                wait = getArgString（args [2]）;
+                画像=$gameScreen.picture（pictureNum）;
+                if（画像）{
+                    if（wait==='ウェイトできる'||wait.toUpperCase（）==='WAIT'）this.wait（picture._fadeDuration）;
+                    picture.cell = cellNumber;
+                }
+                壊す;
+            ケース'PA_PROG_CELL'：
+            ケース'アニメーションのアニメーションセルコー'：
+                pictureNum = getArgNumber（args [0]、1、$ gameScreen.maxPictures（））;
+                wait = getArgString（args [1]）;
+                画像=$gameScreen.picture（pictureNum）;
+                if（画像）{
+                    if（wait==='ウェイトできる'||wait.toUpperCase（）==='WAIT'）this.wait（picture._fadeDuration）;
+                    picture.addCellCount（）;
+                }
+                壊す;
+            ケース'PA_SET_VARIABLE'：
+            ケース'アニメーションのアニメーションセル変数の設定'：
+                pictureNum = getArgNumber（args [0]、1、$ gameScreen.maxPictures（））;
+                画像=$gameScreen.picture（pictureNum）;
+                if（picture）picture.linkToVariable（getArgNumber（args [1]））;
+                壊す;
+            ケース'PA_WAIT'：
+            ケース'アニメーションのアニメーション'：
+                pictureNum = getArgNumber（args [0]、1、$ gameScreen.maxPictures（））;
+                画像=$gameScreen.picture（pictureNum）;
+                if（画像）{
+                    this.waitForPictureAnimation（pictureNum）;
+                }
+                壊す;
+        }
+    };
+
+    Game_Interpreter.prototype.reservePaSound = function（cellNumber）{
+        this._paSoundFrame = cellNumber;
+    };
+
+    var _Game_Interpreter_command250 = Game_Interpreter.prototype.command250;
+    Game_Interpreter.prototype.command250 = function（）{
+        if（this._paSoundFrame）{
+            var se = this._params [0];
+            AudioManager.loadStaticSe（se）;
+            $ gameScreen.addPaSound（se、this._paSoundFrame）;
+            this._paSoundFrame = null;
+            trueを返します。
+        }
+        return _Game_Interpreter_command250.apply（this、arguments）;
+    };
+
+    const _Game_Interpreter_updateWaitMode = Game_Interpreter.prototype.updateWaitMode;
+    Game_Interpreter.prototype.updateWaitMode = function（）{
+        if（this._waitMode ==='pictureAnimation'）{
+            const picture = $ gameScreen.picture（this._waitPictureId）;
+            if（picture && picture.isAnimationPlaying（））{
+                trueを返します。
+            } そうしないと {
+                this._waitPictureId = 0;
+                this._waitMode ='';
+                falseを返します。
+            }
+        } そうしないと {
+            return _Game_Interpreter_updateWaitMode.apply（this、arguments）;
+        }
+    };
+
+    Game_Interpreter.prototype.waitForPictureAnimation = function（pictureId）{
+        this.setWaitMode（'pictureAnimation'）;
+        this._waitPictureId = pictureId;
+    };
+
+    // ================================================ =============================
+    // Game_Screen
+    //アニメーションの情報をありますします。
+    // ================================================ =============================
+    Game_Screen.prototype.setPicturesAnimation = function（cellNumber、frameNumber、direction、fadeDuration）{
+        this._paCellNumber = cellNumber;
+        this._paFrameNumber = frameNumber;
+        this._paDirection=方向;
+        this._paFadeDuration=およびfadeDuration;
+    };
+
+    Game_Screen.prototype.addPaSound = function（sound、frame）{
+        if（！this._paSounds）this._paSounds = [];
+        this._paSounds[frame]=サウンド;
+    };
+
+    Game_Screen.prototype.clearPicturesAnimation = function（）{
+        this._paCellNumber = 1;
+        this._paFrameNumber = 1;
+        this._paDirection ='';
+        this._paFadeDuration = 0;
+        this._paSounds = null;
+    };
+
+    var _Game_Screen_showPicture = Game_Screen.prototype.showPicture;
+    Game_Screen.prototype.showPicture = function（pictureId、name、origin、x、y、
+                                                 scaleX、scaleY、opacity、blendMode）{
+        _Game_Screen_showPicture.apply（this、arguments）;
+        var realPictureId = this.realPictureId（pictureId）;
+        if（this._paCellNumber> 1）{
+            this._pictures [realPictureId] .setAnimationFrameInit（
+                this._paCellNumber、this._paFrameNumber、this._paDirection、this._paFadeDuration、this._paSounds）;
+            this.clearPicturesAnimation（）;
+        }
+    };
+
+    Game_Screen.prototype.isActivePicture = function（picture）{
+        var realId = this._pictures.indexOf（picture）;
+        realId> this.maxPictures（）=== $ gameParty.inBattle（）;を返します。
+    };
+
+    // ================================================ =============================
+    // Game_Picture
+    //アニメーションの情報をありますします。
+    // ================================================ =============================
+    var _Game_Picture_initialize = Game_Picture.prototype.initialize;
+    Game_Picture.prototype.initialize = function（）{
+        _Game_Picture_initialize.call（this）;
+        this.initAnimationFrameInfo（）;
+    };
+
+    Game_Picture.prototype.initAnimationFrameInfo = function（）{
+        this._cellNumber = 1;
+        this._frameNumber = 1;
+        this._cellCount = 0;
+        this._frameCount = 0;
+        this._animationType = 0;
+        this._customArray = null;
+        this._loopFlg = false;
+        this._direction ='';
+        this._fadeDuration = 0;
+        this._fadeDurationCount = 0;
+        this._prevCellCount = 0;
+        this._animationFlg = false;
+        this._linkedVariable = 0;
+        this._cellSes = [];
+    };
+
+    Game_Picture.prototype.direction = function（）{
+        this._directionを返します。
+    };
+
+    Game_Picture.prototype.cellNumber = function（）{
+        this._cellNumberを返します。
+    };
+
+    Game_Picture.prototype.prevCellCount = function（）{
+        this._prevCellCountを返します。
+    };
+
+    Game_Picture.prototype.isMulti = function（）{
+        var dir = this.direction（）;
+        return dir==='連番'|| dir ==='N';
+    };
+
+    / **
+     * Game_PictureのcellCount（0からcellNumber）。
+     *
+     * @property cellCount
+     *@type番号
+     * /
+    Object.defineProperty（Game_Picture.prototype、'cell'、{
+        get：function（）{
+            if（this._linkedVariable> 0）{
+                $ gameVariables.value（this._linkedVariable）％this._cellNumber;を返します。
+            }
+            スイッチ（this._animationType）{
+                ケース3：
+                    return（this._customArray [this._cellCount]-1）.clamp（0、this._cellNumber-1）;
+                ケース2：
+                    this._cellNumber --1 --Math.abs（this._cellCount-（this._cellNumber -1））;を返します。
+                ケース1：
+                    this._cellCountを返します。
+                デフォルト：
+                    this._cellCountを返します。
+            }
+        }、
+        セット：function（value）{
+            var newCellCount = value％this.getCellNumber（）;
+            if（this._cellCount！== newCellCount）{
+                this._prevCellCount = this.cell;
+                this._fadeDurationCount = this._fadeDuration;
+            }
+            this._cellCount = newCellCount;
+        }
+    }）;
+
+    Game_Picture.prototype.getCellNumber = function（）{
+        スイッチ（this._animationType）{
+            ケース3：
+                this._customArray.lengthを返します。
+            ケース2：
+                return（this._cellNumber-1）* 2;
+            ケース1：
+                this._cellNumberを返します。
+            デフォルト：
+                this._cellNumberを返します。
+        }
+    };
+
+    var _Game_Picture_update = Game_Picture.prototype.update;
+    Game_Picture.prototype.update = function（）{
+        _Game_Picture_update.call（this）;
+        if（this.isFading（））{
+            this.updateFading（）;
+        } else if（this.hasAnimationFrame（）&& this.isActive（））{
+            this.updateAnimationFrame（）;
+        } else if（this._lastFrameCount> 0）{
+            this._lastFrameCount--;
+        }
+    };
+
+    Game_Picture.prototype.linkToVariable = function（variableNumber）{
+        this._linkedVariable = variableNumber.clamp（1、$ dataSystem.variables.length）;
+    };
+
+    Game_Picture.prototype.updateAnimationFrame = function（）{
+        this._frameCount =（this._frameCount + 1）％this._frameNumber;
+        if（this._frameCount === 0）{
+            this.addCellCount（）;
+            this.playCellSe（）;
+            if（this.isEndFirstLoop（）&&！this._loopFlg）{
+                this._animationFlg = false;
+                this._lastFrameCount = this._frameNumber;
+            }
+        }
+    };
+
+    Game_Picture.prototype.isEndFirstLoop = function（）{
+        this._cellCount ===（param.returnToFirstCell？0：this.getCellNumber（）-1）;を返します。
+    };
+
+    Game_Picture.prototype.updateFading = function（）{
+        this._fadeDurationCount--;
+    };
+
+    Game_Picture.prototype.prevCellOpacity = function（）{
+        if（this._fadeDuration === 0）return 0;
+        this.opacity（）/ this._fadeDuration*this._fadeDurationCount;を返します。
+    };
+
+    Game_Picture.prototype.addCellCount = function（）{
+        this.cell = this._cellCount + 1;
+    };
+
+    Game_Picture.prototype.playCellSe = function（）{
+        var se = this._cellSes [this.cell + 1];
+        if（se）{
+            AudioManager.playSe（se）;
+        }
+    };
+
+    Game_Picture.prototype.setAnimationFrameInit = function（cellNumber、frameNumber、direction、fadeDuration、cellSes）{
+        this._cellNumber = cellNumber;
+        this._frameNumber = frameNumber;
+        this._frameCount = 0;
+        this._cellCount = 0;
+        this._direction=方向;
+        this._fadeDuration=およびfadeDuration;
+        this._cellSes = cellSes || [];
+    };
+
+    Game_Picture.prototype.startAnimationFrame = function（animationType、loopFlg、customArray）{
+        this._animationType = AnimationType;
+        this._customArray = customArray;
+        this._animationFlg = true;
+        this._loopFlg = loopFlg;
+        if（this._cellNumber <= this._cellCount）{
+            this._cellCount = this._cellNumber-1;
+        }
+        this.playCellSe（）;
+    };
+
+    Game_Picture.prototype.stopAnimationFrame = function（forceFlg）{
+        this._loopFlg = false;
+        if（forceFlg）{
+            this._animationFlg = false;
+        }
+    };
+
+    Game_Picture.prototype.hasAnimationFrame = function（）{
+        this._animationFlg;を返します。
+    };
+
+    Game_Picture.prototype.isFading = function（）{
+        this._fadeDurationCount！==0;を返します。
+    };
+
+    Game_Picture.prototype.isAnimationPlaying = function（）{
+        this.hasAnimationFrame（）を返す|| this.isFading（）|| this._lastFrameCount> 0;
+    };
+
+    Game_Picture.prototype.isNeedFade = function（）{
+        this._fadeDuration！==0;を返します。
+    };
+
+    Game_Picture.prototype.isActive = function（）{
+        $ gameScreen.isActivePicture（this）;を返します。
+    };
+
+    // ================================================ =============================
+    // Sprite_Picture
+    //アニメーションの情報をありますします。
+    // ================================================ =============================
+    var _Sprite_Picture_initialize = Sprite_Picture.prototype.initialize;
+    Sprite_Picture.prototype.initialize = function（pictureId）{
+        this._prevSprite = null;
+        _Sprite_Picture_initialize.apply（this、arguments）;
+    };
+
+    var _Sprite_Picture_update = Sprite_Picture.prototype.update;
+    Sprite_Picture.prototype.update = function（）{
+        _Sprite_Picture_update.apply（this、arguments）;
+        var picture = this.picture（）;
+        if（picture && picture.name（））{
+            if（picture.isMulti（）&&！this._bitmaps）{
+                this.loadAnimationBitmap（）;
+            }
+            if（this.isBitmapReady（））{
+                this.updateAnimationFrame（this、picture.cell）;
+                if（picture.isNeedFade（））this.updateFading（）;
+            }
+        }
+    };
+
+    var _Sprite_Picture_updateBitmap = Sprite_Picture.prototype.updateBitmap;
+    Sprite_Picture.prototype.updateBitmap = function（）{
+        _Sprite_Picture_updateBitmap.apply（this、arguments）;
+        if（！this.picture（））{
+            this._bitmaps = null;
+            if（this._prevSprite）{
+                this._prevSprite.bitmap = null;
+            }
+        }
+    };
+
+    Sprite_Picture.prototype.updateFading = function（）{
+        if（！this._prevSprite）{
+            this.makePrevSprite（）;
+        }
+        if（！this._prevSprite.bitmap）{
+            this.makePrevBitmap（）;
+        }
+        var picture = this.picture（）;
+        if（picture.isFading（））{
+            this._prevSprite.visible = true;
+            this.updateAnimationFrame（this._prevSprite、picture.prevCellCount（））;
+            this._prevSprite.opacity = picture.prevCellOpacity（）;
+        } そうしないと {
+            this._prevSprite.visible = false;
+        }
+    };
+
+    Sprite_Picture.prototype.updateAnimationFrame = function（sprite、cellCount）{
+        スイッチ（this.picture（）。direction（））{
+            ケース'連番'：
+            ケース'N'：
+                sprite.bitmap = this._bitmaps [cellCount];
+                sprite.setFrame（0、0、sprite.bitmap.width、sprite.bitmap.height）;
+                壊す;
+            ケース'通常'：
+            ケース'V'：
+                var height = sprite.bitmap.height / this.picture（）。cellNumber（）;
+                var y =cellCount*高さ;
+                sprite.setFrame（0、y、sprite.bitmap.width、height）;
+                壊す;
+            ケース'横'：
+            ケース「H」：
+                var width = sprite.bitmap.width / this.picture（）。cellNumber（）;
+                var x =cellCount*幅;
+                sprite.setFrame（x、0、width、sprite.bitmap.height）;
+                壊す;
+            デフォルト：
+                sprite.setFrame（0、0、this.bitmap.width、this.bitmap.height）;
+        }
+    };
+
+    var _Sprite_Picture_loadBitmap = Sprite_Picture.prototype.loadBitmap;
+    Sprite_Picture.prototype.loadBitmap = function（）{
+        _Sprite_Picture_loadBitmap.apply（this、arguments）;
+        this._bitmapReady = false;
+        this._bitmaps = null;
+        if（this._prevSprite）{
+            this._prevSprite.visible = false;
+        }
+    };
+
+    Sprite_Picture.prototype.loadAnimationBitmap = function（）{
+        var cellNumber = this.picture（）。cellNumber（）;
+        var cellDigit = cellNumber.toString（）。length;
+        this._bitmaps = [this.bitmap];
+        for（var i = 1; i <cellNumber; i ++）{
+            var filename = this._pictureName.substr（0、this._pictureName.length --cellDigit）+ i.padZero（cellDigit）;
+            this._bitmaps [i] = ImageManager.loadPicture（filename）;
+        }
+        this._bitmapReady = false;
+    };
+
+    Sprite_Picture.prototype.makePrevSprite = function（）{
+        this._prevSprite = new Sprite（）;
+        this._prevSprite.visible = false;
+        this.addChild（this._prevSprite）;
+    };
+
+    Sprite_Picture.prototype.makePrevBitmap = function（）{
+        this._prevSprite.bitmap = this.bitmap;
+        this._prevSprite.anchor.x = this.anchor.x;
+        this._prevSprite.anchor.y = this.anchor.y;
+    };
+
+    Sprite_Picture.prototype.isBitmapReady = function（）{
+        （！this.bitmap）がfalseを返す場合;
+        if（this._bitmapReady）return true;
+        var result;
+        if（this.picture（）。isMulti（））{
+            結果=this._bitmaps.every（function（bitmap）{
+                ビットマップを返します。isReady（）;
+            }）;
+        } そうしないと {
+            結果=this.bitmap.isReady（）;
+        }
+        this._bitmapReady=結果;
+        結果を返します。
+    };
+}）（）;
